@@ -6,8 +6,8 @@ plugins {
     //https://developer.android.com/build/migrate-to-ksp?hl=es-419
     //id("com.google.devtools.ksp")
 
-    id("com.google.dagger.hilt.android") version "2.55"
     kotlin("kapt")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -66,21 +66,13 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation(libs.hilt.android.v255)
-    kapt(libs.hilt.android.compiler)
+    implementation("com.google.dagger:hilt-android:2.44")
+    kapt("com.google.dagger:hilt-android-compiler:2.44")
 
-    //DCS - LiveData
-    implementation(libs.androidx.runtime.livedata)
+    //LiveData
+    implementation("androidx.compose.runtime:runtime-livedata:1.5.4")
 
-    //DCS - Room
-    implementation(libs.androidx.room.runtime)
-    annotationProcessor(libs.androidx.room.compiler)
 
-    // To use Kotlin annotation processing tool (kapt)
-    kapt(libs.androidx.room.compiler.v250)
-
-    // optional - Kotlin Extensions and Coroutines support for Room
-    implementation(libs.androidx.room.ktx)
 }
 
 hilt {

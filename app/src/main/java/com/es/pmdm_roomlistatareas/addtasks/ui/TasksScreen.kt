@@ -41,65 +41,23 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.es.pmdm_roomlistatareas.addtasks.ui.model.TaskModel
 
-/**
- * Función principal básica
- */
 @Composable
 fun TasksScreen(tasksViewModel: TasksViewModel) {
     val showDialog: Boolean by tasksViewModel.showDialog.observeAsState(false)
     val myTaskText: String by tasksViewModel.myTaskText.observeAsState("")
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
 
-    val uiState by produceState<TaskUiState>(
-        initialValue = TaskUiState.Loading,
-        key1 = lifecycle,
-        key2 = tasksViewModel
-    ){
-        lifecycle.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
-            tasksViewModel.uiState.collect{ value = it }
-        }
-    }
-
-    when (uiState) {
-        is TaskUiState.Error -> {  }
-        is TaskUiState.Loading -> {
-            Box(modifier = Modifier.fillMaxSize()) {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .size(150.dp)
-                        .align(Alignment.Center)
-                )
-            }
-        }
-        is TaskUiState.Success -> {
-            Box(modifier = Modifier.fillMaxSize()) {
-                AddTasksDialog(
-                    show = showDialog,
-                    myTaskText = myTaskText,
-                    onDismiss = { tasksViewModel.onDialogClose() },
-                    onTaskAdded = { tasksViewModel.onTaskCreated() },
-                    onTaskTextChanged = { tasksViewModel.onTaskTextChanged(it) }
-                )
-                FabDialog(
-                    Modifier.align(Alignment.BottomEnd),
-                    onNewTask = { tasksViewModel.onShowDialogClick() })
-                TasksList((uiState as TaskUiState.Success).tasks, tasksViewModel)
-            }
-        }
-    }
-}
-
-@Composable
-fun FabDialog(
-    modifier: Modifier,
-    onNewTask: () -> Unit
-) {
-    FloatingActionButton(
-        onClick = {
-            onNewTask()
-        }, modifier = modifier.padding(16.dp)
-    ) {
-        Icon(Icons.Filled.Add, contentDescription = "")
+    Box(modifier = Modifier.fillMaxSize()) {
+        AddTasksDialog(
+            show = showDialog,
+            myTaskText = myTaskText,
+            onDismiss = { tasksViewModel.onDialogClose() },
+            onTaskAdded = { tasksViewModel.onTaskCreated() },
+            onTaskTextChanged = { tasksViewModel.onTaskTextChanged(it) }
+        )
+        FabDialog(
+            Modifier.align(Alignment.BottomEnd),
+            onNewTask = { tasksViewModel.onShowDialogClick() })
+        TasksList(tasksViewModel)
     }
 }
 
@@ -148,9 +106,27 @@ fun AddTasksDialog(
 }
 
 @Composable
-fun TasksList(tasks: List<TaskModel>, tasksViewModel: TasksViewModel) {
+fun FabDialog(
+    modifier: Modifier,
+    onNewTask: () -> Unit
+) {
+    FloatingActionButton(
+        onClick = {
+            onNewTask()
+        }, modifier = modifier.padding(16.dp)
+    ) {
+        Icon(Icons.Filled.Add, contentDescription = "")
+    }
+}
+
+@Composable
+fun TasksList(tasksViewModel: TasksViewModel) {
+    val myTasks: List<TaskModel> = tasksViewModel.tasks
+
     LazyColumn {
-        items(tasks, key = { it.id }) { task ->
+        //El parámetro opcional key ayuda a optimizar el LazyColumn
+        //Al indicarle que la clave es el id va a ser capaz de identificar cada tarea sin problemas
+        items(myTasks, key = { it.id }) { task ->
             ItemTask(
                 task,
                 onTaskRemove = { tasksViewModel.onItemRemove(it) },
@@ -167,6 +143,12 @@ fun ItemTask (
     onTaskCheckChanged: (TaskModel) -> Unit
 ) {
     Card(
+        //pointerInput es una función se utiliza para configurar la entrada de puntero (input)
+        //para el componente visual al que se le aplica... la detección de gestos de entrada táctil
+        //En nuestro caso queremos eliminar una tarea con el gesto de pulsación larga (onLongPress)
+        //sobre la tarea, por lo tanto el componente visual dónde aplicar el modificador debe ser el Card.
+        //En la expresión lambda no podemos utilizar it como parámetro de la llamada a onTaskRemove(it)
+        //it es el Offset y nosotros necesitamos pasarle el taskModel que debe eliminarse...
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
